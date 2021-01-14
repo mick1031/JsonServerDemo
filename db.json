@@ -1,0 +1,16 @@
+{
+  "customers": [
+    {
+      "id": 1,
+      "name": "customer1",
+      "phone": "0912456789"
+    }
+  ],
+  "orders": [
+    {
+      "id": 1,
+      "customerId": "1",
+      "orderDate": "2021-01-15"
+    }
+  ]
+}

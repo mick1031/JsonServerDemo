@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+        integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css">
+    <title>json server demo</title>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-2 p-3">
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <a href="/customer/list.html">customer</a>
+                    </li>
+                    <li class="list-group-item">
+                        <a href="/order/list.html">order</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-10 p-3">
+                <div class="card">
+                    <h5 class="card-header">Order</h5>
+                    <div class="card-body">
+
+                        <button type="button" class="btn btn-success mb-3" onclick="Create()">
+                            Create
+                        </button>
+
+                        <table id="ListTable" class="table table-striped table-bordered">
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="EditPanelModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Panel</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="EditForm">
+                        <input type="hidden" name="id" id="id">
+                        <div class="form-group row">
+                            <label for="customerId" class="col-sm-2 col-form-label">Customer</label>
+                            <div class="col-sm-10">
+                                <select class="form-control" id="customerId" name="customerId">
+
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="orderDate" class="col-sm-2 col-form-label">Order Date</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="orderDate" name="orderDate">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="Save();">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"
+        integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+        integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+
+    <script src="https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        let table = {};
+        $(function () {
+            $("#orderDate").datepicker();
+            $("#orderDate").datepicker("option", "dateFormat", "yy-mm-dd");
+
+            $.ajax({
+                url:"http://localhost:3000/customers"
+            }).done(list => {
+                $("#customerId").append("<option value=''>-----</option>")
+              list.map(m => {
+                  $("#customerId").append("<option value='" + m.id + "'>" + m.name + "</option>")
+              })  
+            })
+
+
+            table = $("#ListTable").DataTable({
+                ajax: {
+                    url: "http://localhost:3000/orders/?_expand=customer",
+                    dataSrc: ""
+                },
+                columns: [
+                    {
+                        title: "",
+                        data: "id",
+                        render: (data, type, row, meta) => {
+                            return "<button type='button' class='btn btn-info mr-3' onclick='Edit(" + data + ")'>Edit</div>"
+                                + "<button type='button' class='btn btn-danger' onclick='Delete(" + data + ")'>Delete</div>";
+                        }
+                    },
+                    {
+                        title: "customer name",
+                        data: "customer.name"
+                    },
+                    {
+                        title: "order date",
+                        data: "orderDate"
+                    }
+                ]
+            });
+        })
+
+        function Save() {
+            var data = {
+                id: $("#id").val(),
+                customerId: $("#customerId").val(),
+                orderDate: $("#orderDate").val(),
+            };
+
+            if (data.id == "") {
+                $.ajax({
+                    url: "http://localhost:3000/orders",
+                    type: "post",
+                    data: data
+                })
+            } else {
+                $.ajax({
+                    url: "http://localhost:3000/orders/" + data.id,
+                    type: "put",
+                    data: data
+                })
+            }
+
+            $("#EditPanelModal").modal('hide');
+            table.ajax.reload();
+        }
+
+        function Create() {
+            $("#EditForm")[0].reset();
+            $("#EditPanelModal").modal('show');
+        }
+
+        function Edit(id) {
+            $("#EditForm")[0].reset();
+            $.ajax({
+                url: "http://localhost:3000/orders/" + id
+            }).done(m => {
+                $("#id").val(m.id);
+                $("#customerId").val(m.customerId);
+                $("#orderDate").val(m.orderDate);
+                $("#EditPanelModal").modal('show');
+            })
+        }
+
+        function Delete(id) {
+            if (!confirm("你確定要刪掉嗎?")) {
+                return;
+            }
+            $.ajax({
+                url: "http://localhost:3000/orders/" + id,
+                type: "delete"
+            }).done(m => {
+                table.ajax.reload();
+            });
+            
+        }
+    </script>
+</body>
+
+</html>
